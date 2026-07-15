@@ -127,7 +127,9 @@ def generate_answer(question, retriever):
         context += f"File: {file_path}\n```\n{doc.page_content}\n```\n\n"
 
     prompt = f"""You are a code assistant answering questions about a codebase.
-Use only the code excerpts below to answer. For every claim, mention the exact file path it came from.
+Base your answer on the code excerpts below. You may reason about what the code
+does and how it's architected, even if specific terms aren't literally present
+in the code. For any specific fact or implementation detail, cite the exact file path.
 
 Code excerpts:
 {context}
