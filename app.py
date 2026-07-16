@@ -6,6 +6,29 @@ if "GROQ_API_KEY" in st.secrets:
 from code_pipeline import index_repo, generate_answer
 
 st.set_page_config(page_title="Codebase Whisperer", page_icon="💻", layout="wide")
+st.markdown("""
+<style>
+    .main .block-container {
+        padding-top: 2rem;
+        max-width: 900px;
+    }
+    h1 {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+    [data-testid="stChatMessage"] {
+        border-radius: 12px;
+        padding: 0.5rem;
+    }
+    .stExpander {
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        border-radius: 10px;
+    }
+    section[data-testid="stSidebar"] {
+        border-right: 1px solid rgba(128, 128, 128, 0.15);
+    }
+</style>
+""", unsafe_allow_html=True)
 st.title("💻 Codebase Whisperer")
 st.write("Paste a public GitHub repo URL, then ask how the code works.")
 
