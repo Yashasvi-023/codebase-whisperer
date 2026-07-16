@@ -37,6 +37,7 @@ if repo_url and repo_url != st.session_state.current_repo:
             st.session_state.indexed_files = sorted(set(path for path, _ in source_files))
             st.session_state.messages = []
             st.success(f"Indexed {len(source_files)} files, {num_chunks} chunks.")
+            st.rerun()
         except Exception as e:
             st.error(f"Couldn't process this repo: {e}")
             st.session_state.retriever = None
