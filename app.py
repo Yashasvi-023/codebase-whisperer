@@ -113,8 +113,8 @@ with st.sidebar:
         .limit(10) \
         .execute()
 
-    for row in history.data:
-        if st.button(row["repo_url"], key=f"history_{row['repo_url']}"):
+    for i, row in enumerate(history.data):
+        if st.button(row["repo_url"], key=f"history_{i}"):
             st.session_state.prefill_url = row["repo_url"]
             st.rerun()
 
@@ -141,10 +141,12 @@ if repo_url and repo_url != st.session_state.current_repo:
             st.session_state.indexed_files = sorted(set(path for path, _ in source_files))
             st.session_state.messages = []
 
-            supabase.table("repo_history").insert({
-                "user_id": st.session_state.user.id,
-                "repo_url": repo_url
-            }).execute()
+            existing_urls = [row["repo_url"] for row in history.data]
+            if repo_url not in existing_urls:
+                supabase.table("repo_history").insert({
+                    "user_id": st.session_state.user.id,
+                    "repo_url": repo_url
+                }).execute()
 
             st.success(f"Indexed {len(source_files)} files, {num_chunks} chunks.")
             st.rerun()
