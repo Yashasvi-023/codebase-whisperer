@@ -2,6 +2,7 @@ import os
 import shutil
 import stat
 import subprocess
+import uuid
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
@@ -100,10 +101,11 @@ def build_code_documents(source_files):
 
 
 def build_vectorstore(chunks):
+    collection_name = f"codebase_{uuid.uuid4().hex[:8]}"
     vectorstore = Chroma.from_documents(
         documents=chunks,
         embedding=embedding_model,
-        collection_name="codebase"
+        collection_name=collection_name
     )
     return vectorstore.as_retriever(search_kwargs={"k": 6})
 
