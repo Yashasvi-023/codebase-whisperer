@@ -3,6 +3,12 @@ from supabase import create_client
 
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
+if "access_token" in st.session_state and "refresh_token" in st.session_state:
+    supabase.auth.set_session(
+        st.session_state.access_token,
+        st.session_state.refresh_token
+    )
+
 if "user" not in st.session_state:
     st.session_state.user = None
 
@@ -22,6 +28,8 @@ if st.session_state.user is None:
                     "password": login_password
                 })
                 st.session_state.user = result.user
+                st.session_state.access_token = result.session.access_token
+                st.session_state.refresh_token = result.session.refresh_token
                 st.rerun()
             except Exception as e:
                 st.error(f"Login failed: {e}")
@@ -89,6 +97,8 @@ with st.sidebar:
     if st.button("Log out"):
         supabase.auth.sign_out()
         st.session_state.user = None
+        st.session_state.access_token = None
+        st.session_state.refresh_token = None
         st.session_state.retriever = None
         st.session_state.current_repo = None
         st.rerun()
