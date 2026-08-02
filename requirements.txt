@@ -6,3 +6,4 @@ langchain-chroma
 langchain-groq
 sentence-transformers
 chromadb
+supabase
