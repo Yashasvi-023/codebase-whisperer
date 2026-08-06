@@ -163,6 +163,8 @@ if repo_url and repo_url != st.session_state.current_repo:
             st.session_state.retriever = None
             st.session_state.current_repo = None
 
+        
+
 if st.session_state.retriever is not None:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
@@ -171,19 +173,46 @@ if st.session_state.retriever is not None:
     question = st.chat_input("Ask how the code works...")
 
     if question:
+        # Show user message
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user"):
             st.markdown(question)
 
+        # Save user message
+        supabase.table("chat_history").insert({
+            "user_id": st.session_state.user.id,
+            "repo_url": st.session_state.current_repo,
+            "role": "user",
+            "content": question
+        }).execute()
+
+        # Generate assistant response
         with st.chat_message("assistant"):
             with st.spinner("Reading the code..."):
-                answer, retrieved_docs = generate_answer(question, st.session_state.retriever)
+                answer, retrieved_docs = generate_answer(
+                    question,
+                    st.session_state.retriever
+                )
+
                 st.markdown(answer)
 
                 for doc in retrieved_docs:
                     file_path = doc.metadata["file_path"]
+
                     with st.expander(f"📄 {file_path}"):
                         ext = file_path.split(".")[-1]
                         st.code(doc.page_content, language=ext)
 
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        # Save assistant message
+        supabase.table("chat_history").insert({
+            "user_id": st.session_state.user.id,
+            "repo_url": st.session_state.current_repo,
+            "role": "assistant",
+            "content": answer
+        }).execute()
+
+        # Add assistant message to current session
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer
+        })
