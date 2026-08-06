@@ -139,7 +139,15 @@ if repo_url and repo_url != st.session_state.current_repo:
             st.session_state.retriever = retriever
             st.session_state.current_repo = repo_url
             st.session_state.indexed_files = sorted(set(path for path, _ in source_files))
-            st.session_state.messages = []
+
+            past_messages = supabase.table("chat_history") \
+                .select("role, content") \
+                .eq("user_id", st.session_state.user.id) \
+                .eq("repo_url", repo_url) \
+                .order("created_at") \
+                .execute()
+
+            st.session_state.messages = past_messages.data
 
             existing_urls = [row["repo_url"] for row in history.data]
             if repo_url not in existing_urls:
