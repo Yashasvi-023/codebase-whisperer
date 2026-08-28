@@ -3,7 +3,7 @@ langchain-core
 langchain-text-splitters
 langchain-huggingface
 langchain-chroma
-langchain-groq
+langchain-google-genai
 sentence-transformers
 chromadb
 supabase

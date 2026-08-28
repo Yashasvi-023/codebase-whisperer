@@ -8,13 +8,16 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # ---------------------------------------------------------
 # Models are loaded once when this file is imported.
 # ---------------------------------------------------------
 embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-llm = ChatGroq(model="llama-3.3-70b-versatile")
+llm = ChatGoogleGenerativeAI(
+    model="gemini-3.6-flash",
+    temperature=0
+)
 
 CODE_EXTENSIONS = {".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".java", ".rb", ".php"}
 SKIP_DIRS = {"node_modules", ".git", "dist", "build", "__pycache__", "venv", ".venv"}
