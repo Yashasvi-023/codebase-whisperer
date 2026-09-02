@@ -108,15 +108,15 @@ def build_vectorstore(chunks):
 
 
 def index_repo(repo_url):
-    """Clones repo to an isolated temporary directory and builds index."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        clone_repo(repo_url, temp_dir)
-        source_files = collect_source_files(temp_dir)
-        chunks = build_code_documents(source_files)
-        retriever = build_vectorstore(chunks)
-        # Return unique relative file paths for display
-        file_list = sorted(set(path for path, _ in source_files))
-        return retriever, file_list, len(chunks)
+    """Runs the full ingestion pipeline for one repo URL and returns
+    (retriever, source_files, num_chunks) — everything app.py needs."""
+    repo_path = clone_repo(repo_url)
+    source_files = collect_source_files(repo_path)
+    chunks = build_code_documents(source_files)
+    retriever = build_vectorstore(chunks)
+    
+    # Make sure you are returning 3 items here:
+    return retriever, source_files, len(chunks)
 
 
 def generate_answer(question, retriever):
