@@ -2,6 +2,7 @@ import os
 import shutil
 import stat
 import subprocess
+import tempfile
 import uuid
 
 from langchain_core.documents import Document
@@ -10,9 +11,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# ---------------------------------------------------------
-# Models are loaded once when this file is imported.
-# ---------------------------------------------------------
 embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
@@ -38,48 +36,44 @@ EXTENSION_TO_LANGUAGE = {
 
 
 def _remove_readonly(func, path, exc_info):
-    """Windows sometimes marks files inside .git as read-only; this clears
-    that flag so shutil.rmtree can actually delete them."""
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
 
-def clone_repo(repo_url, local_path="cloned_repo"):
-    if os.path.exists(local_path):
-        shutil.rmtree(local_path, onerror=_remove_readonly)
+def clone_repo(repo_url, target_dir):
+    # Sanitize URL to ensure it starts with standard HTTPS
+    if not (repo_url.startswith("https://github.com/") or repo_url.startswith("http://github.com/")):
+        raise ValueError("Invalid GitHub repository URL.")
 
     subprocess.run(
-        ["git", "clone", "--depth", "1", repo_url, local_path],
+        ["git", "clone", "--depth", "1", "--", repo_url, target_dir],
         check=True
     )
-    return local_path
 
 
 def collect_source_files(repo_path):
     source_files = []
-
     for root, dirs, files in os.walk(repo_path):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-
         for filename in files:
             if filename in SKIP_FILES:
                 continue
-
             ext = os.path.splitext(filename)[1]
             if ext in CODE_EXTENSIONS:
                 full_path = os.path.join(root, filename)
                 relative_path = os.path.relpath(full_path, repo_path).replace(os.sep, "/")
                 source_files.append((relative_path, full_path))
-
     return source_files
 
 
 def build_code_documents(source_files):
     all_chunks = []
-
     for relative_path, full_path in source_files:
-        with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
-            content = f.read()
+        try:
+            with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+        except Exception:
+            continue
 
         if not content.strip():
             continue
@@ -114,13 +108,15 @@ def build_vectorstore(chunks):
 
 
 def index_repo(repo_url):
-    """Runs the full ingestion pipeline for one repo URL and returns
-    (retriever, source_files, num_chunks) — everything app.py needs."""
-    repo_path = clone_repo(repo_url)
-    source_files = collect_source_files(repo_path)
-    chunks = build_code_documents(source_files)
-    retriever = build_vectorstore(chunks)
-    return retriever, source_files, len(chunks)
+    """Clones repo to an isolated temporary directory and builds index."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        clone_repo(repo_url, temp_dir)
+        source_files = collect_source_files(temp_dir)
+        chunks = build_code_documents(source_files)
+        retriever = build_vectorstore(chunks)
+        # Return unique relative file paths for display
+        file_list = sorted(set(path for path, _ in source_files))
+        return retriever, file_list, len(chunks)
 
 
 def generate_answer(question, retriever):
