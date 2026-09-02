@@ -15,7 +15,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 # ---------------------------------------------------------
 embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
+    model="gemini-1.5-flash",
     temperature=0
 )
 
